@@ -43,7 +43,7 @@ public class CopyPasteBot {
     private static final int SOURCE_START_COLUMN_INDEX = 2;
 
     public List<Integer> sourceColumns = IntStream.range(
-            SOURCE_START_COLUMN_INDEX, SOURCE_START_COLUMN_INDEX + 10
+            SOURCE_START_COLUMN_INDEX, SOURCE_START_COLUMN_INDEX + 9
     ).boxed().toList();
 
     private static final CellCopyPolicy COPY_POLICY = new CellCopyPolicy.Builder()
@@ -83,7 +83,7 @@ public class CopyPasteBot {
             // 3 sections need to copy, 16 rows form a cycle
             for (Integer i = 0; i < 3; i++) {
                 for (Integer baseSourceRow : baseSourceRows) {
-                    Integer rowNum = baseSourceRow += (i * CYCLE);
+                    Integer rowNum = baseSourceRow + (i * CYCLE);
                     Row row = sheet.getRow(rowNum);
 
                     for (Integer colNum : sourceColumns) {
