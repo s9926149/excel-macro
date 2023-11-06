@@ -67,20 +67,20 @@ public class CopyPasteBot {
 
         try (Workbook wb = WorkbookFactory.create(new File(targetTemplateFilename))) {
             for (SourceExcelFile file : this.sourceFiles) {
-                copyAndPastSingleFile(file, wb);
+                copyAndPasteSingleFile(file, wb);
             }
         }
 
         return this.targetFilePath;
     }
 
-    public void copyAndPastSingleFile(SourceExcelFile file, Workbook templateWorkbook) throws IOException {
+    public void copyAndPasteSingleFile(SourceExcelFile file, Workbook templateWorkbook) throws IOException {
         try (Workbook wb = WorkbookFactory.create(file.getPath().toFile())) {
             Sheet sheet = wb.getSheet(SourceExcelFile.getSourceSheetName());
 
             List<CopiedCell> copiedCells = new ArrayList<>();
 
-            // 3 sections need to copy, 16 rows forms a cycle
+            // 3 sections need to copy, 16 rows form a cycle
             for (Integer i = 0; i < 3; i++) {
                 for (Integer baseSourceRow : baseSourceRows) {
                     Integer rowNum = baseSourceRow += (i * CYCLE);
