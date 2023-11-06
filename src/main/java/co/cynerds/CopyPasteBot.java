@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.IntStream;
 
 public class CopyPasteBot {
@@ -113,9 +114,13 @@ public class CopyPasteBot {
 
     private static void pasteCell(Sheet targetSheet, CopiedCell sourceCell) {
         Row row = targetSheet.getRow(getTargetRow(sourceCell));
-        Cell targetCell = row.getCell(getTargetColumn(sourceCell));
 
-        CellUtil.copyCell(sourceCell.cell(), targetCell, COPY_POLICY, null);
+        if (Objects.nonNull(row)) {
+            Cell targetCell = row.getCell(getTargetColumn(sourceCell));
+            if (Objects.nonNull(targetCell)) {
+                CellUtil.copyCell(sourceCell.cell(), targetCell, COPY_POLICY, null);
+            }
+        }
     }
 
     private static int getTargetRow(CopiedCell sourceCell) {
