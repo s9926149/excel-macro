@@ -32,7 +32,7 @@ public class SourceExcelFile {
     private static final int TARGET_START_ROW_INDEX = 9;
 
     public static final Pattern SOURCE_FILE_NAME_PATTERN =
-            Pattern.compile("^\\[Result\\](?<loopCount>\\d*)_Loop_10.*\\[.*_(?<type>HOME|NHOME)(?<testDateOrder>\\d)?\\]_\\d*\\.xls$");
+            Pattern.compile("^\\[Result\\](?<loopCount>3|10)_Loop_10.*\\[.*_(?<type>HOME|NHOME)(?<testDateOrder>\\d)?\\]_\\d*\\.xls$");
 
     private static final String SOURCE_SHEET_NAME = "DataTable";
 
