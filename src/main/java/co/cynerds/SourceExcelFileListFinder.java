@@ -4,20 +4,17 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class SourceExcelFileListFinder {
 
-    private static final Set<String> FILES_MUST_CONTAIN = Collections.unmodifiableSet(
-            Set.of("HOME1", "HOME2", "HOME3", "NHOME1", "NHOME2", "NHOME3")
-    );
-
-    private static final String MSG_TEMPLATE = "Found files are not expect as HOME1 to HOME3 and NHOME1 to NHOME3, found: \n";
+    private static final String MSG_TEMPLATE = "Found files are not expected, found: \n";
 
     public static List<SourceExcelFile> getSourceExcelFilesAndCheckFileCount(String dir) {
         List<SourceExcelFile> files = getSourceExcelFiles(dir);
@@ -64,11 +61,38 @@ public class SourceExcelFileListFinder {
     }
 
     public static boolean isExactRequiredFiles(List<SourceExcelFile> files) {
-        Set<String> fileKeys = files.stream()
-                .map(f -> f.getType().toString() + f.getTestDateOrder())
+        return Arrays.stream(DataType.values())
+                .map(t -> check(files, t))
+                .reduce(true, (b1, b2) -> b1 && b2);
+    }
+
+
+    private static boolean check(List<SourceExcelFile> files, DataType type) {
+        List<String> filesKeysOfType = files.stream()
+                .filter(f -> type.equals(f.getType()))
+                .map(f -> {
+                    String testDateOrder = Objects.nonNull(f.getTestDateOrder()) ? f.getTestDateOrder().toString() : "";
+                    return f.getType().toString() + testDateOrder;
+                })
+                .toList();
+
+        Set<String> FILES_MUST_CONTAIN_3_LOOPS = IntStream.rangeClosed(1, 3)
+                .mapToObj(num -> type.name() + num)
                 .collect(Collectors.toSet());
 
-        return FILES_MUST_CONTAIN.equals(fileKeys);
+
+        if (
+            FILES_MUST_CONTAIN_3_LOOPS.size() == filesKeysOfType.size() &&
+            FILES_MUST_CONTAIN_3_LOOPS.containsAll(filesKeysOfType))
+        {
+            return true;
+        } else if (
+            filesKeysOfType.size() == 1 && type.name().equals(filesKeysOfType.get(0))
+        ) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
 }

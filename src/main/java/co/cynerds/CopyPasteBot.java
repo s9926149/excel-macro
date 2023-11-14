@@ -24,16 +24,16 @@ public class CopyPasteBot {
 
     private String targetFilePath;
 
-    private List<SourceExcelFile> sourceFiles;
+    private final List<SourceExcelFile> sourceFiles;
 
-    private static final int CYCLE = 16;
+    private static final int CYCLE_SIZE = 16;
 
     /**
      * 0-based, [2-11] [18-27] [34-43]
      */
     private static final int SOURCE_START_ROW_INDEX = 2;
 
-    public List<Integer> baseSourceRows = IntStream.range(
+    public final List<Integer> baseSourceRows = IntStream.range(
             SOURCE_START_ROW_INDEX, SOURCE_START_ROW_INDEX + 10
     ).boxed().toList();
 
@@ -42,9 +42,19 @@ public class CopyPasteBot {
      */
     private static final int SOURCE_START_COLUMN_INDEX = 2;
 
-    public List<Integer> sourceColumns = IntStream.range(
+    public final List<Integer> sourceColumns = IntStream.range(
             SOURCE_START_COLUMN_INDEX, SOURCE_START_COLUMN_INDEX + 9
     ).boxed().toList();
+
+    /**
+     * 0-based, N -> 13
+     */
+    public static final int STARTING_SECTOR_DETERMINING_COLUMN = 13;
+
+    /**
+     * 0-based, 2
+     */
+    public static final int STARTING_SECTOR_DETERMINING_ROW = 2;
 
     private static final CellCopyPolicy COPY_POLICY = new CellCopyPolicy.Builder()
             .cellValue(true)
@@ -78,12 +88,22 @@ public class CopyPasteBot {
         try (Workbook wb = WorkbookFactory.create(file.getPath().toFile())) {
             Sheet sheet = wb.getSheet(SourceExcelFile.getSourceSheetName());
 
-            List<CopiedCell> copiedCells = new ArrayList<>();
+            List<CopiedCell> copiedCells = copyCells(file, sheet);
 
+            paste(copiedCells, templateWorkbook);
+        }
+    }
+
+    // TODO refactor this pile of...
+    public List<CopiedCell> copyCells(SourceExcelFile file, Sheet sheet) {
+        Integer loopCount = file.getLoopCount();
+        List<CopiedCell> copiedCells = new ArrayList<>();
+
+        if (loopCount == 3) {
             // 3 sections need to copy, 16 rows form a cycle
-            for (Integer i = 0; i < 3; i++) {
+            for (Integer section = 0; section < 3; section++) {
                 for (Integer baseSourceRow : baseSourceRows) {
-                    Integer rowNum = baseSourceRow + (i * CYCLE);
+                    Integer rowNum = baseSourceRow + (section * CYCLE_SIZE);
                     Row row = sheet.getRow(rowNum);
 
                     for (Integer colNum : sourceColumns) {
@@ -92,9 +112,47 @@ public class CopyPasteBot {
                     }
                 }
             }
+        } else if (loopCount == 10) {
+            // determine whether starting section is 0 or 1 by specific cell value
+            int startingSection = determineStartingSection(sheet);
 
-            paste(copiedCells, templateWorkbook);
+            // 9 sections need to copy, 16 rows form a cycle
+            for (Integer section = startingSection; section < startingSection + 9; section++) {
+                for (Integer baseSourceRow : baseSourceRows) {
+                    Integer rowNum = baseSourceRow + (section * CYCLE_SIZE);
+                    Row row = sheet.getRow(rowNum);
+
+                    int testDateOrder = calculateTestDateOrder(startingSection, section);
+                    for (Integer colNum : sourceColumns) {
+                        Cell cell = row.getCell(colNum);
+                        int shiftedRowNum = shiftRowBackFor10Loops(rowNum, startingSection, testDateOrder);
+
+                        copiedCells.add(new CopiedCell(shiftedRowNum, colNum, cell, file.getType(), testDateOrder));
+                    }
+                }
+            }
+        } else {
+            throw new IllegalArgumentException(
+                    "Only 3 or 10 loop count is accepted, current value: %d".formatted(loopCount)
+            );
         }
+
+        return copiedCells;
+    }
+
+    private static int determineStartingSection(Sheet sheet) {
+        double determiningValue = sheet.getRow(STARTING_SECTOR_DETERMINING_ROW)
+                .getCell(STARTING_SECTOR_DETERMINING_COLUMN)
+                .getNumericCellValue();
+        return determiningValue < 1 ? 0 : 1;
+    }
+
+    private static int calculateTestDateOrder(int startingSection, int section) {
+        return ((section - startingSection) / 3) + 1;
+    }
+
+    private static int shiftRowBackFor10Loops(int rowNum, int startingSection, int testDateOrder) {
+        return rowNum - (startingSection * CYCLE_SIZE) - ((testDateOrder - 1) * CYCLE_SIZE * 3);
     }
 
     private void paste(List<CopiedCell> copiedCells, Workbook templateWorkbook) throws IOException {

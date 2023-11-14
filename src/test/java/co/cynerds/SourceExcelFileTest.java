@@ -24,7 +24,7 @@ class SourceExcelFileTest {
 
     @Test
     public void test10LoopsVerFromPathWithCorrectPath() {
-        String filePath = "./sample/10-loops-version/[Result]10_Loop_10_Cycle_All_result_BL4000_SN[NPT22-00XX_HOME]_20231002175041.xls";
+        String filePath = "./sample/10-loops-start-from-0-version/[Result]10_Loop_10_Cycle_All_result_BL4000_SN[NPT22-00XX_HOME]_20231002175041.xls";
         Path path = Paths.get(filePath);
 
         SourceExcelFile file = SourceExcelFile.fromPath(path);
