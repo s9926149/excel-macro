@@ -1,6 +1,7 @@
 package co.cynerds;
 
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,7 +12,9 @@ public class SourceExcelFile {
 
     private final DataType type;
 
-    private final int testDateOrder;
+    private final Integer testDateOrder;
+
+    private final Integer loopCount;
 
     /**
      * 0-based, B-J -> 1-9
@@ -28,33 +31,42 @@ public class SourceExcelFile {
      */
     private static final int TARGET_START_ROW_INDEX = 9;
 
-    public static final Pattern SOURCE_FILE_NAME_PATTERN = Pattern.compile("^\\[Result\\].*\\[.*_(.*)(\\d)\\]_\\d*\\.xls$");
+    public static final Pattern SOURCE_FILE_NAME_PATTERN =
+            Pattern.compile("^\\[Result\\](?<loopCount>\\d*)_Loop_10.*\\[.*_(?<type>HOME|NHOME)(?<testDateOrder>\\d)?\\]_\\d*\\.xls$");
 
     private static final String SOURCE_SHEET_NAME = "DataTable";
 
 
-    public SourceExcelFile(Path path, DataType type, int testDateOrder) {
+    public SourceExcelFile(Path path, DataType type, Integer testDateOrder, Integer loopCount) {
         this.path = path;
         this.type = type;
         this.testDateOrder = testDateOrder;
+        this.loopCount = loopCount;
     }
 
     public static SourceExcelFile fromPath(Path path) {
+        checkIfFileExists(path);
+
         Matcher matcher = SOURCE_FILE_NAME_PATTERN.matcher(path.getFileName().toString());
 
         if (matcher.matches()) {
             try {
+                String testDateOrder = matcher.group("testDateOrder");
+                String loopCount = matcher.group("loopCount");
                 return new SourceExcelFile(
                         path,
-                        DataType.valueOf(matcher.group(1)),
-                        Integer.parseInt(matcher.group(2))
+                        DataType.valueOf(matcher.group("type")),
+                        Objects.nonNull(testDateOrder) ? Integer.valueOf(testDateOrder) : null,
+                        Objects.nonNull(loopCount) ? Integer.valueOf(loopCount) : null
                 );
             } catch (IllegalArgumentException e) {
                 System.out.printf(
-                        "Warning: <%s> is not a correct source file name, DataType: <%s>, TestDateOrder: <%s> %n",
+                        "Warning: <%s> is not a correct source file name, DataType: <%s>, TestDateOrder: <%s>, LoopCount: <%s> %n",
                         path.getFileName().toString(),
-                        matcher.group(1),
-                        matcher.group(2)
+                        matcher.group("type"),
+                        matcher.group("testDateOrder"),
+                        matcher.group("loopCount")
+
                 );
                 return null;
             }
@@ -62,6 +74,12 @@ public class SourceExcelFile {
             return null;
         }
 
+    }
+
+    private static void checkIfFileExists(Path path) {
+        if (!path.toFile().exists()) {
+            throw new IllegalArgumentException("No such file at %s".formatted(path.toAbsolutePath().toString()));
+        }
     }
 
     public Path getPath() {
@@ -72,8 +90,12 @@ public class SourceExcelFile {
         return type;
     }
 
-    public int getTestDateOrder() {
+    public Integer getTestDateOrder() {
         return testDateOrder;
+    }
+
+    public Integer getLoopCount() {
+        return loopCount;
     }
 
     public int getTargetStartColumnIndex() {
@@ -91,9 +113,10 @@ public class SourceExcelFile {
     @Override
     public String toString() {
         return new StringJoiner(", ", SourceExcelFile.class.getSimpleName() + ": {", "}")
-                .add("\"path\": \"" + path + "\"")
+                .add("\"path\": " + path)
                 .add("\"type\": " + type)
                 .add("\"testDateOrder\": " + testDateOrder)
+                .add("\"loopCount\": " + loopCount)
                 .toString();
     }
 }
