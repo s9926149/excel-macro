@@ -15,7 +15,7 @@ class SourceExcelFileListFinderTest {
 
     @Test
     void testExactFileCount() {
-        assertEquals(6, SourceExcelFileListFinder.getSourceExcelFilesAndCheckFileCount("./sample").size());
+        assertEquals(6, SourceExcelFileListFinder.getSourceExcelFilesAndCheckFileCount("./sample/3-loops-version").size());
     }
 
 }
