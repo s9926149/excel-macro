@@ -47,14 +47,14 @@ public class CopyPasteBot {
     ).boxed().toList();
 
     /**
-     * 0-based, N -> 13
+     * 0-based, I14
      */
-    public static final int STARTING_SECTOR_DETERMINING_COLUMN = 13;
+    public static final CellAddress FIRST_STARTING_SECTOR_DETERMINING_CELL = new CellAddress(8, 13);
 
     /**
-     * 0-based, 2
+     * 0-based, J14
      */
-    public static final int STARTING_SECTOR_DETERMINING_ROW = 2;
+    public static final CellAddress SECOND_STARTING_SECTOR_DETERMINING_CELL = new CellAddress(9, 13);
 
     private static final CellCopyPolicy COPY_POLICY = new CellCopyPolicy.Builder()
             .cellValue(true)
@@ -141,10 +141,14 @@ public class CopyPasteBot {
     }
 
     private static int determineStartingSection(Sheet sheet) {
-        double determiningValue = sheet.getRow(STARTING_SECTOR_DETERMINING_ROW)
-                .getCell(STARTING_SECTOR_DETERMINING_COLUMN)
-                .getNumericCellValue();
-        return determiningValue < 1 ? 0 : 1;
+        boolean firstCellLessThan1 = sheet.getRow(FIRST_STARTING_SECTOR_DETERMINING_CELL.row())
+                .getCell(FIRST_STARTING_SECTOR_DETERMINING_CELL.col())
+                .getNumericCellValue() < 1;
+        boolean secondCellLessThan1 = sheet.getRow(SECOND_STARTING_SECTOR_DETERMINING_CELL.row())
+                .getCell(SECOND_STARTING_SECTOR_DETERMINING_CELL.col())
+                .getNumericCellValue() < 1;
+
+        return firstCellLessThan1 && secondCellLessThan1 ? 0 : 1;
     }
 
     private static int calculateTestDateOrder(int startingSection, int section) {
